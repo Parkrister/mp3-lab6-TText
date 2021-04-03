@@ -3,24 +3,16 @@
 #include <string.h>
 #include "stack.h"
 #include <iostream>
-#include <sstream>
+#include <fstream>
 using namespace std;
 
 const size_t MaxLen = 80;
-
-class TText;
-class TTextLink;
-struct TMem {
-	TTextLink* pFirst, * pLast, * pFree;
-};
 
 class TTextLink
 {
 public:
 	TTextLink* pNext, * pDown;
 	char str[MaxLen];
-	static TMem mem;
-	static InitMem(int size = 100);
 	TTextLink(char* s = nullptr, TTextLink* pn = nullptr, TTextLink* pd = nullptr) {
 		if (s == nullptr)
 			str[0] = '\0';
@@ -108,36 +100,35 @@ class TText {
 
 	// Запись в файл
 	void Save(char* fn) {
-		ofstream ost;
-		ost.open(char);
+		ofstream ost(fn);
 		SaveRec(pFirst, ost);
-		ofs.Close();
+		ost.close();
 	}
 	void SaveRec(TTextLink* t, ofstream& ost) {
 		if (t != NULL) {
-			ost << y-> << '\n';
+			ost << t->str << '\n';
 			if (t->pDown != NULL) {
-				ost << "{\n";
+				ost << '{\n';
 				SaveRec(t->pDown, ost);
-				ost << "}\n";
+				ost << '}\n';
 			}
 			if (t->pNext != NULL)
 				SaveRec(t->pNext, ost);
 		}
 	}
 
-	// чтение из файла
+	// Чтение из файла
 	void Read(char* fn) {
 		ifstream ifs(fn);
 		pFirst = ReadRec(ifs);
 		ifs.close();
 	}
-	TTextLink* ReadRec(ifstream& ifs) {
+	TTextLink* ReadRec(std::ifstream& ifs) {
 		TTextLink* pF, * pC;
 		pF = pC = NULL;
 		char Buff[MaxLen];
 		while (!ifs.eof()) {
-			Buff = ifs.getline(Buff, MaxLen, '\n');
+			ifs.getline(Buff, MaxLen, '\n');
 			if (Buff[0] == '}')
 				break;
 			else if (Buff[0] == '{')
@@ -145,7 +136,7 @@ class TText {
 			else {
 				TTextLink* tmp = new TTextLink(Buff);
 				if (pC == NULL)
-					pF = pC = tmp;
+					pF = pC = NULL;
 				else {
 					pC->pNext = tmp;
 					pC = pC->pNext;
@@ -154,6 +145,18 @@ class TText {
 		}
 		return pF;
 	}
+
+	void Reset() { pCurr = pFirst; }
+	void GoNext() {
+		pCurr = st.pop();
+		if (pCurr != pFirst) {
+			if (pCurr->pNext)
+				st.push(pCurr->pNext);
+			if (pCurr->pDown)
+				st.push(pCurr->pDown);
+		}
+	}
+	bool IsEnd() { return st.empty(); }
 
 	void Reset() {
 		if (pFirst) {
@@ -167,16 +170,4 @@ class TText {
 		}
 	}
 
-	void GoNext() {
-		pCurr = st.pop();
-		if (pCurr !- pFirst) {
-			if (pCurr->pNext)
-				st.push(pCurr->pNext);
-			if (pCurr->pDown)
-				st.push(pCurr->pDown);
-		}
-	}
-	bool IsEnd() {
-		return st.IsEmpty();
-	}
 };
