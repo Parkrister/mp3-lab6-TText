@@ -3,7 +3,7 @@
 #include <string.h>
 #include "stack.h"
 #include <iostream>
-#include <sstream>
+#include <fstream>
 using namespace std;
 
 const size_t MaxLen = 80;
@@ -100,12 +100,74 @@ class TText {
 
 	// Запись в файл
 	void Save(char* fn) {
-		ofstream ost;
-		ost.open(char);
+		ofstream ost(fn);
 		SaveRec(pFirst, ost);
-		ofs.Close();
+		ost.close();
 	}
-	void SaveRec(TTextLink* t, ofstream& ofs) {
+	void SaveRec(TTextLink* t, ofstream& ost) {
+		if (t != NULL) {
+			ost << t->str << '\n';
+			if (t->pDown != NULL) {
+				ost << '{\n';
+				SaveRec(t->pDown, ost);
+				ost << '}\n';
+			}
+			if (t->pNext != NULL)
+				SaveRec(t->pNext, ost);
+		}
+	}
 
+	// Чтение из файла
+	void Read(char* fn) {
+		ifstream ifs(fn);
+		pFirst = ReadRec(ifs);
+		ifs.close();
 	}
+	TTextLink* ReadRec(std::ifstream& ifs) {
+		TTextLink* pF, * pC;
+		pF = pC = NULL;
+		char Buff[MaxLen];
+		while (!ifs.eof()) {
+			ifs.getline(Buff, MaxLen, '\n');
+			if (Buff[0] == '}')
+				break;
+			else if (Buff[0] == '{')
+				pC->pDown = ReadRec(ifs);
+			else {
+				TTextLink* tmp = new TTextLink(Buff);
+				if (pC == NULL)
+					pF = pC = NULL;
+				else {
+					pC->pNext = tmp;
+					pC = pC->pNext;
+				}
+			}
+		}
+		return pF;
+	}
+
+	void Reset() { pCurr = pFirst; }
+	void GoNext() {
+		pCurr = st.pop();
+		if (pCurr != pFirst) {
+			if (pCurr->pNext)
+				st.push(pCurr->pNext);
+			if (pCurr->pDown)
+				st.push(pCurr->pDown);
+		}
+	}
+	bool IsEnd() { return st.empty(); }
+
+	void Reset() {
+		if (pFirst) {
+			st.Clear();
+			pCurr = pFirst;
+			st.push(pFirst);
+			if (pCurr->pNext)
+				st.push(pCurr->pNext);
+			if (pCurr->pDown)
+				st.push(pCurr->pDown);
+		}
+	}
+
 };
