@@ -4,30 +4,51 @@
 #include "stack.h"
 #include <iostream>
 #include <fstream>
+
+#define _CRT_SECURE_NO_WARNINGS
 using namespace std;
 
 const size_t MaxLen = 80;
+const size_t MaxMemorySize = 100;
+
+class TText;
+class TTextLink;
+
+struct TMem {
+	TTextLink* pFirst, * pLast, * pFree;
+};
 
 class TTextLink
 {
 public:
 	TTextLink* pNext, * pDown;
+	bool flag;
+	static TMem mem;
 	char str[MaxLen];
-	TTextLink(char* s = nullptr, TTextLink* pn = nullptr, TTextLink* pd = nullptr) {
+	TTextLink(const char* s = NULL, TTextLink* pn = NULL, TTextLink* pd = NULL) {
 		if (s == nullptr)
 			str[0] = '\0';
 		else {
-			strcpy(str, s);
+			strcpy_s(str, s);
 		}
 		pNext = pn;
 		pDown = pd;
 	}
-	~TTextLink();
+	static void InitMem(size_t size = MaxMemorySize);
+	//~TTextLink();
+	static void PrintFree();
+	static void Clean(TText& t);
+
+	void* operator new(size_t n);
+	void operator delete(void* p);
 };
 
 class TText {
+public:
+	
 	TTextLink *pFirst, *pCurr;
 	stack<TTextLink*> st;
+	TText() { pFirst = NULL; pCurr = NULL; }
 	void GoFirstLink() {
 		pCurr = pFirst;
 		st.Clear();
@@ -53,15 +74,15 @@ class TText {
 		pCurr->pNext = tmp;
 	}
 
-	void InsNextSection(char* s) {
+	void InsNextSection(const char* s) {
 		TTextLink* tmp = new TTextLink(s, NULL, pCurr->pNext);
 		pCurr->pNext = tmp;
 	}
-	void InsDownLine(char* s) {
+	void InsDownLine(const char* s) {
 		TTextLink* tmp = new TTextLink(s, pCurr->pDown);
 		pCurr->pDown = tmp;
 	}
-	void InsDownSection(char* s) {
+	void InsDownSection(const char* s) {
 		TTextLink* tmp = new TTextLink(s, NULL, pCurr->pDown);
 		pCurr->pDown = tmp;
 	}
@@ -72,7 +93,7 @@ class TText {
 			delete tmp;
 		}
 	}
-	void DelDownSection() {
+	void DelDownLine() {
 		if (pCurr->pDown) {
 			TTextLink* tmp = pCurr->pDown;
 			pCurr->pDown = tmp->pNext;
@@ -99,7 +120,7 @@ class TText {
 	}
 
 	// Запись в файл
-	void Save(char* fn) {
+	void Save(const char* fn) {
 		ofstream ost(fn);
 		SaveRec(pFirst, ost);
 		ost.close();
@@ -118,7 +139,7 @@ class TText {
 	}
 
 	// Чтение из файла
-	void Read(char* fn) {
+	void Read(const char* fn) {
 		ifstream ifs(fn);
 		pFirst = ReadRec(ifs);
 		ifs.close();
@@ -146,7 +167,7 @@ class TText {
 		return pF;
 	}
 
-	void Reset() { pCurr = pFirst; }
+	//void Reset() { pCurr = pFirst; }
 	void GoNext() {
 		pCurr = st.pop();
 		if (pCurr != pFirst) {
@@ -157,7 +178,6 @@ class TText {
 		}
 	}
 	bool IsEnd() { return st.empty(); }
-
 	void Reset() {
 		if (pFirst) {
 			st.Clear();

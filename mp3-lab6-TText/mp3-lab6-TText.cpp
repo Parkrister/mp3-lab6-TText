@@ -2,10 +2,72 @@
 //
 
 #include <iostream>
+#include <stdio.h>
+#include "TText.h"
 
 int main()
 {
-    return 0;
+	TTextLink::InitMem();
+	TText text;
+	text.Read("text.txt");
+	text.Print();
+	std::cout << '\n';
+	std::cout << std::endl << "Free list : ";
+	TTextLink::PrintFree();
+	TTextLink::Clean(text);
+	std::cout << std::endl << "New free list : ";
+	TTextLink::PrintFree();
+	std::cout << std::endl;
+	char str[] = "gamm";
+	for (text.Reset(); !text.IsEnd(); text.GoNext())
+	{
+		if (!strcmp(text.pCurr->str, str))
+		{
+			text.DelDownLine();
+			break;
+		}
+	}
+	std::cout << '\n';
+	text.Print();
+	std::cout << std::endl << "Free list : ";
+	TTextLink::PrintFree();
+	TTextLink::Clean(text);
+	std::cout << std::endl << "New free list : ";
+	TTextLink::PrintFree();
+	std::cout << std::endl;
+	for (text.Reset(); !text.IsEnd(); text.GoNext())
+	{
+		if (!strcmp(text.pCurr->str, str))
+		{
+			text.InsDownLine("new_line");
+			break;
+		}
+	}
+	std::cout << '\n';
+	text.Print();
+	std::cout << std::endl << "Free list : ";
+	TTextLink::PrintFree();
+	TTextLink::Clean(text);
+	std::cout << std::endl << "New free list : ";
+	TTextLink::PrintFree();
+	std::cout << std::endl;
+	for (text.Reset(); !text.IsEnd(); text.GoNext())
+	{
+		if (!strcmp(text.pCurr->str, str))
+		{
+			text.DelNextLine();
+			break;
+		}
+	}
+	std::cout << '\n';
+	text.Print();
+	std::cout << std::endl << "Free list : ";
+	TTextLink::PrintFree();
+	TTextLink::Clean(text);
+	std::cout << std::endl << "New free list : ";
+	TTextLink::PrintFree();
+	std::cout << std::endl;
+	//text.SaveS("read.txt");
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
