@@ -1,193 +1,82 @@
 #pragma once
-#include <stdlib.h>
-#include <string.h>
-#include "stack.h"
-#include <iostream>
-#include <fstream>
+#include<iostream>
+#include<fstream>
+#include<stdio.h>
+#include<algorithm>
+#include<stack>
+#include<set>
 
-#define _CRT_SECURE_NO_WARNINGS
-using namespace std;
+const int MAX_SIZE = 80;
+const int MaxMemorySize = 100;
 
-const size_t MaxLen = 80;
-const size_t MaxMemorySize = 100;
-
+struct  TTextLink;
 class TText;
-class TTextLink;
-
-struct TMem {
-	TTextLink* pFirst, * pLast, * pFree;
+struct  TMem
+{
+	TTextLink* pFirst, * pFree, * pLast;
 };
 
-class TTextLink
-{
-public:
-	TTextLink* pNext, * pDown;
+struct TTextLink {
+	TTextLink* pNext;
+	TTextLink* pDown;
+	char str[MAX_SIZE];
 	bool flag;
 	static TMem mem;
-	char str[MaxLen];
-	TTextLink(const char* s = NULL, TTextLink* pn = NULL, TTextLink* pd = NULL) {
-		if (s == nullptr)
-			str[0] = '\0';
-		else {
-			strcpy_s(str, s);
-		}
-		pNext = pn;
-		pDown = pd;
-	}
-	static void InitMem(size_t size = MaxMemorySize);
-	//~TTextLink();
+	static void InitMem(int size = MaxMemorySize);
+	static void clean(TText& t);
 	static void PrintFree();
-	static void Clean(TText& t);
-
-	void* operator new(size_t n);
-	void operator delete(void* p);
+	//конструктор
+	TTextLink(const char* s = NULL, TTextLink* next = NULL, TTextLink* down = NULL);
 };
 
-class TText {
+class TText : private TTextLink
+{
+	TTextLink* pFirst;
+	TTextLink* pCurr;
+	std::stack<TTextLink*>st;
+	//рекурсивна€ печать. ¬нутренн€€ функци€ 
+	void PrintRec(TTextLink* t, int level);
+	//рекурсивный вывод в файл. ¬нутренн€€ функци€
+	void SaveRec(TTextLink* t, std::ofstream& ofs);
+	//рекурсивное чтение из файла. ¬нутренн€€ функци€
+	TTextLink* ReadRec(std::ifstream& ifs);
 public:
-	
-	TTextLink *pFirst, *pCurr;
-	stack<TTextLink*> st;
-	TText() { pFirst = NULL; pCurr = NULL; }
-	void GoFirstLink() {
-		pCurr = pFirst;
-		st.Clear();
-	}
-	void GoNextLink() {
-		if (pCurr->pNext) {
-			st.push(pCurr);
-			pCurr = pCurr->pNext;
-		}
-	}
-	void GoPrevLink() {
-		if (pFirst != pCurr)
-			pCurr = st.pop();
-	}
-
-	void GoDownLink() {
-		st.push(pCurr);
-		pCurr = pCurr->pDown;
-	}
-
-	void InsNextLine(char* s) {
-		TTextLink* tmp = new TTextLink(s, pCurr->pNext);
-		pCurr->pNext = tmp;
-	}
-
-	void InsNextSection(const char* s) {
-		TTextLink* tmp = new TTextLink(s, NULL, pCurr->pNext);
-		pCurr->pNext = tmp;
-	}
-	void InsDownLine(const char* s) {
-		TTextLink* tmp = new TTextLink(s, pCurr->pDown);
-		pCurr->pDown = tmp;
-	}
-	void InsDownSection(const char* s) {
-		TTextLink* tmp = new TTextLink(s, NULL, pCurr->pDown);
-		pCurr->pDown = tmp;
-	}
-	void DelNextLine() {
-		if (pCurr->pNext) {
-			TTextLink* tmp = pCurr->pNext;
-			pCurr->pNext = tmp->pNext;
-			delete tmp;
-		}
-	}
-	void DelDownLine() {
-		if (pCurr->pDown) {
-			TTextLink* tmp = pCurr->pDown;
-			pCurr->pDown = tmp->pNext;
-			delete tmp;
-		}
-	}
-
-	// ѕечать текста
-	void Print() {
-		PrintRec(pFirst);
-	}
-	void PrintRec(TTextLink* t) {
-		int level = 1;
-		if (t != NULL) {
-			for (int i = 0; i < level; i++) {
-				std::cout << ' ';
-				std::cout << t->str << '\n';
-				level++;
-				PrintRec(t->pDown);
-				level--;
-				PrintRec(t->pNext);
-			}
-		}
-	}
-
-	// «апись в файл
-	void Save(const char* fn) {
-		ofstream ost(fn);
-		SaveRec(pFirst, ost);
-		ost.close();
-	}
-	void SaveRec(TTextLink* t, ofstream& ost) {
-		if (t != NULL) {
-			ost << t->str << '\n';
-			if (t->pDown != NULL) {
-				ost << '{\n';
-				SaveRec(t->pDown, ost);
-				ost << '}\n';
-			}
-			if (t->pNext != NULL)
-				SaveRec(t->pNext, ost);
-		}
-	}
-
-	// „тение из файла
-	void Read(const char* fn) {
-		ifstream ifs(fn);
-		pFirst = ReadRec(ifs);
-		ifs.close();
-	}
-	TTextLink* ReadRec(std::ifstream& ifs) {
-		TTextLink* pF, * pC;
-		pF = pC = NULL;
-		char Buff[MaxLen];
-		while (!ifs.eof()) {
-			ifs.getline(Buff, MaxLen, '\n');
-			if (Buff[0] == '}')
-				break;
-			else if (Buff[0] == '{')
-				pC->pDown = ReadRec(ifs);
-			else {
-				TTextLink* tmp = new TTextLink(Buff);
-				if (pC == NULL)
-					pF = pC = NULL;
-				else {
-					pC->pNext = tmp;
-					pC = pC->pNext;
-				}
-			}
-		}
-		return pF;
-	}
-
-	//void Reset() { pCurr = pFirst; }
-	void GoNext() {
-		pCurr = st.pop();
-		if (pCurr != pFirst) {
-			if (pCurr->pNext)
-				st.push(pCurr->pNext);
-			if (pCurr->pDown)
-				st.push(pCurr->pDown);
-		}
-	}
-	bool IsEnd() { return st.empty(); }
-	void Reset() {
-		if (pFirst) {
-			st.Clear();
-			pCurr = pFirst;
-			st.push(pFirst);
-			if (pCurr->pNext)
-				st.push(pCurr->pNext);
-			if (pCurr->pDown)
-				st.push(pCurr->pDown);
-		}
-	}
-
+	//конструктор по умолчанию
+	TText();
+	//конструктор копировани€
+	//TText(const TText& t);
+	//переместить указатель на текущий на первый элемент и очистить стек
+	void GoFirstLink();
+	//перейти к следующему элементу по иерархии после текущего
+	void GoNextLink();
+	//перейти к нижнему (вложенному) элементу по иерархии после текущего
+	void GoDownLink();
+	//вернутьс€ к предыдущему элементу
+	void GoPrevLink();
+	//добавить следующий по иерархии элемент и присоединить к нему pNext текущего как pNext
+	void InsNextLine(const char* s);
+	//добавить следующий по иерархии элемент и присоединить к нему pNext текущего как pDown
+	void InsNextSections(const char* s);
+	//добавить вложенный по иерархии элемент и присоединить к нему pDown текущего как pNext
+	void InsDownLine(const char* s);
+	//добавить вложенный по иерархии элемент и присоединить к нему pDown текущего как pDown 
+	void InsDownSections(const char* s);
+	//удалить у текущего следующую по иерархии секцию
+	void DelNextLine();
+	//удалить у текущего вложенную по иерархии секцию
+	void DelDownLine();
+	//печать на экран (через вызов рекурсивной печати). ¬нешн€€ функци€
+	void Print();
+	//вывод в файл (через вызов рекурсивного вывода). ¬нешн€€ функци€ 
+	void Save(const char* file_name);
+	//чтение из файла (через вызов рекурсивоного чтени€). ¬нешн€€ функци€ 
+	void Read(const char* file_name);
+	//навигаци€ по тексту 
+	void Reset();
+	void GoNext();
+	bool IsEmpty();
+	TTextLink* GetCurr() { return pCurr; }
+	//переопределение операторов работы с пам€тью
+	void* operator new(std::size_t n);
+	void operator delete (void* memory);
 };
